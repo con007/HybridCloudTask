@@ -299,3 +299,53 @@ provisioner "remote-exec" {
 
 }
 
+resource "aws_eip" "nat" {
+  vpc              = true
+ }
+
+
+resource "aws_nat_gateway" "lwtask3" {
+
+depends_on = [
+  aws_instance.mysql,
+]
+
+  allocation_id = "${aws_eip.nat.id}"
+  subnet_id     = "${aws_subnet.sub-1a.id}"
+
+  tags = {
+    Name = "lwtask3 NAT"
+  }
+}
+
+
+resource "aws_route_table" "lwtask3nat" {
+
+depends_on = [
+  aws_nat_gateway.lwtask3,
+]
+
+  vpc_id = "${aws_vpc.lwtask3.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_nat_gateway.lwtask3.id}"
+  }
+
+  tags = {
+    Name = "lwtask3"
+  }
+}
+
+resource "aws_route_table_association" "nat" {
+
+depends_on = [
+  aws_route_table.lwtask3nat,
+]
+
+  subnet_id      = "${aws_subnet.sub-1b.id}"
+  route_table_id = aws_route_table.lwtask3nat.id
+}
+
+
+
